@@ -1,0 +1,30 @@
+# Original data
+data = [10, None, 20, 10, "", 30, None, 40]
+
+# Empty list for cleaned data
+clean_data = []
+
+# Counter for removed values
+removed_count = 0
+
+# Loop through each item
+for item in data:
+
+    # Remove invalid values
+    if item is None or item == "":
+        removed_count += 1
+        continue
+
+    # Remove duplicates
+    if item not in clean_data:
+        clean_data.append(item)
+    else:
+        removed_count += 1
+
+# Sort the final list
+clean_data.sort()
+
+# Output
+print("Original List:", data)
+print("Cleaned List:", clean_data)
+print("Removed Values Count:", removed_count)
