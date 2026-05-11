@@ -1,0 +1,82 @@
+# Initial phonebook
+phonebook = {
+    "AMIT": "9876543210",
+    "RIYA": "9123456780"
+}
+
+# Function to add contact
+def add_contact(name, number):
+
+    # Convert name to uppercase for consistency
+    name = name.upper()
+
+    # Prevent duplicate entries
+    if name in phonebook:
+        print(f"{name} already exists!")
+
+    else:
+        phonebook[name] = number
+        print(f"{name} added successfully.")
+
+
+# Function to search contact
+def search_contact(name):
+
+    name = name.upper()
+
+    if name in phonebook:
+        print(f"{name}'s Number: {phonebook[name]}")
+
+    else:
+        print("Contact not found.")
+
+
+# Function to delete contact
+def delete_contact(name):
+
+    name = name.upper()
+
+    if name in phonebook:
+        del phonebook[name]
+        print(f"{name} deleted successfully.")
+
+    else:
+        print("Contact not found.")
+
+
+# Bonus: Partial name search
+def partial_search(keyword):
+
+    keyword = keyword.upper()
+
+    found = False
+
+    for name, number in phonebook.items():
+
+        if keyword in name:
+            print(f"{name}: {number}")
+            found = True
+
+    if not found:
+        print("No matching contact found.")
+
+
+# ---------------- MAIN PROGRAM ---------------- #
+
+print("Initial Phonebook:")
+print(phonebook)
+
+print("\nAdding Contact:")
+add_contact("Neha", "9988776655")
+
+print("\nSearching Contact:")
+search_contact("Riya")
+
+print("\nPartial Search:")
+partial_search("am")
+
+print("\nDeleting Contact:")
+delete_contact("Amit")
+
+print("\nFinal Phonebook:")
+print(phonebook)
