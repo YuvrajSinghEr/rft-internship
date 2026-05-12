@@ -1,0 +1,50 @@
+# Sales dataset
+sales_data = [
+    ["A", 2, 100],
+    ["B", 1, 200],
+    ["A", 3, 100],
+    ["C", 5, 50]
+]
+
+# Dictionary to store product revenue
+product_sales = {}
+
+# Variable for total revenue
+total_revenue = 0
+
+# Process each row
+for row in sales_data:
+
+    product = row[0]
+    quantity = row[1]
+    price = row[2]
+
+    # New column: Total Quantity * Price
+    revenue = quantity * price
+
+    # Add to total revenue
+    total_revenue += revenue
+
+    # Store revenue product-wise
+    if product in product_sales:
+        product_sales[product] += revenue
+    else:
+        product_sales[product] = revenue
+
+# Find top-selling product
+top_product = max(product_sales, key=product_sales.get)
+
+# Sort by revenue
+sorted_sales = sorted(
+    product_sales.items(),
+    key=lambda x: x[1],
+    reverse=True
+)
+
+# Output
+print("Total Sales Per Product:")
+for product, revenue in sorted_sales:
+    print(f"{product}: {revenue}")
+
+print("\nTotal Revenue:", total_revenue)
+print("Top-Selling Product:", top_product)
