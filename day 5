@@ -1,0 +1,58 @@
+# Open CSV file
+file = open("students.csv", "r")
+
+# Read all lines
+lines = file.readlines()
+
+# Close file
+file.close()
+
+# Extract headers
+headers = lines[0].strip().split(",")
+
+# Empty list to store student data
+students = []
+
+# Variable to calculate total marks
+total_marks = 0
+
+# Process remaining lines
+for line in lines[1:]:
+
+    # Remove extra spaces/newlines
+    line = line.strip()
+
+    # Skip empty lines
+    if line == "":
+        continue
+
+    # Split data by comma
+    values = line.split(",")
+
+    # Handle missing values
+    if len(values) != len(headers):
+        print("Skipping incomplete row:", values)
+        continue
+
+    # Create dictionary
+    student = {
+        "NAME": values[0],
+        "AGE": int(values[1]),
+        "MARKS": int(values[2])
+    }
+
+    # Add marks for average
+    total_marks += student["MARKS"]
+
+    # Store student record
+    students.append(student)
+
+# Calculate average marks
+average_marks = total_marks / len(students)
+
+# Output
+print("Student Records:")
+for student in students:
+    print(student)
+
+print("\nAverage Marks:", round(average_marks, 2))
