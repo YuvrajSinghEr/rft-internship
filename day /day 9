@@ -1,0 +1,29 @@
+import pandas as pd
+# Create dataset
+data = {
+    "NAME": ["Amit", "Riya", "John", "Neha"],
+    "AGE": [25, 32, 28, 35],
+    "SALARY": [60000, 45000, 70000, 52000]
+}
+# Create DataFrame
+df = pd.DataFrame(data)
+print("Original Dataset:\n")
+print(df)
+# ---------------- FILTERING ---------------- #
+# Filter:
+# Salary > 50000
+# Age < 30
+filtered_data = df[
+    (df["SALARY"] > 50000) &
+    (df["AGE"] < 30)
+]
+# ---------------- OUTPUT ---------------- #
+print("\nFiltered Data:\n")
+print(filtered_data)
+# ---------------- BONUS ---------------- #
+# Save filtered data to new CSV file
+filtered_data.to_csv(
+    "filtered_employees.csv",
+    index=False
+)
+print("\nFiltered data saved to 'filtered_employees.csv'")
