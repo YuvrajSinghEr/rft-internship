@@ -1,0 +1,34 @@
+# List of logs
+logs = [
+    "ERROR DISK FULL",
+    "INFO STARTED",
+    "ERROR FILE MISSING",
+    "WARNING MEMORY LOW"
+]
+# Dictionary to store counts
+log_count = {
+    "ERROR": 0,
+    "INFO": 0,
+    "WARNING": 0
+}
+# Process logs
+for log in logs:
+    # Ignore case sensitivity
+    log = log.upper()
+    # Count log types
+    if "ERROR" in log:
+        log_count["ERROR"] += 1
+    elif "INFO" in log:
+        log_count["INFO"] += 1
+    elif "WARNING" in log:
+        log_count["WARNING"] += 1
+# Find most frequent log type
+most_frequent = max(
+    log_count,
+    key=log_count.get
+)
+# ---------------- OUTPUT ---------------- #
+print("Log Counts:\n")
+for log_type, count in log_count.items():
+    print(f"{log_type}: {count}")
+print("\nMost Frequent Log Type:", most_frequent)
