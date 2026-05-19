@@ -1,0 +1,38 @@
+import matplotlib.pyplot as plt
+# Dataset
+students = ["AMIT", "RIYA", "JOHN"]
+marks = [85, 92, 78]
+# Find highest and lowest scorer
+highest_marks = max(marks)
+lowest_marks = min(marks)
+highest_student = students[marks.index(highest_marks)]
+lowest_student = students[marks.index(lowest_marks)]
+# Create bar chart
+plt.figure(figsize=(7, 5))
+bars = plt.bar(students, marks)
+# Add value labels on bars
+for bar in bars:
+    height = bar.get_height()
+    plt.text(
+        bar.get_x() + bar.get_width()/2,
+        height + 1,
+        str(height),
+        ha='center'
+    )
+# Add labels and title
+plt.xlabel("Students")
+plt.ylabel("Marks")
+plt.title("Student Performance Dashboard")
+# Highlight topper and lowest scorer
+plt.text(
+    students[marks.index(highest_marks)],
+    highest_marks + 3,
+    "Topper"
+)
+plt.text(
+    students[marks.index(lowest_marks)],
+    lowest_marks + 3,
+    "Lowest"
+)
+# Show chart
+plt.show()
