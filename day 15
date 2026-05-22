@@ -1,0 +1,50 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Dataset
+df = pd.DataFrame({
+    "DAY": ["MON", "TUE", "WED", "THU", "FRI"],
+    "SALES": [200, 250, 300, 280, 350]
+})
+
+# Create dashboard
+fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+
+# Line chart
+axes[0, 0].plot(
+    df["DAY"],
+    df["SALES"],
+    marker='o'
+)
+
+axes[0, 0].set_title("Trend Analysis")
+
+# Bar chart
+axes[0, 1].bar(
+    df["DAY"],
+    df["SALES"]
+)
+
+axes[0, 1].set_title("Sales Comparison")
+
+# Histogram
+sns.histplot(
+    df["SALES"],
+    kde=True,
+    ax=axes[1, 0]
+)
+
+axes[1, 0].set_title("Distribution")
+
+# Boxplot (Bonus)
+sns.boxplot(
+    y=df["SALES"],
+    ax=axes[1, 1]
+)
+
+axes[1, 1].set_title("Outlier Detection")
+
+plt.tight_layout()
+
+plt.show()
