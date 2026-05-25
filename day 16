@@ -1,0 +1,123 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# ---------------- DATASET ---------------- #
+
+data = {
+    "DATE": [
+        "2024-01-01",
+        "2024-01-02",
+        "2024-01-03",
+        "2024-01-04",
+        "2024-01-05"
+    ],
+
+    "PRODUCT": [
+        "Laptop",
+        "Mouse",
+        "Laptop",
+        "Keyboard",
+        "Mouse"
+    ],
+
+    "REGION": [
+        "North",
+        "South",
+        "East",
+        "West",
+        "North"
+    ],
+
+    "SALES": [
+        50000,
+        2000,
+        55000,
+        None,
+        3000
+    ]
+}
+
+# Create DataFrame
+df = pd.DataFrame(data)
+
+# ---------------- DATA CLEANING ---------------- #
+
+print("Original Dataset:\n")
+print(df)
+
+# Handle missing values
+df["SALES"] = df["SALES"].fillna(
+    df["SALES"].mean()
+)
+
+print("\nDataset After Cleaning:\n")
+print(df)
+
+# ---------------- AGGREGATION ---------------- #
+
+# Total sales per product
+product_sales = df.groupby(
+    "PRODUCT"
+)["SALES"].sum()
+
+# Region-wise sales
+region_sales = df.groupby(
+    "REGION"
+)["SALES"].sum()
+
+# Best performing region
+best_region = region_sales.idxmax()
+
+# ---------------- VISUALIZATION ---------------- #
+
+plt.figure(figsize=(12, 5))
+
+# ----- LINE CHART ----- #
+
+plt.subplot(1, 2, 1)
+
+plt.plot(
+    df["DATE"],
+    df["SALES"],
+    marker='o'
+)
+
+plt.title("Sales Trend")
+plt.xlabel("Date")
+plt.ylabel("Sales")
+plt.xticks(rotation=45)
+
+# ----- BAR CHART ----- #
+
+plt.subplot(1, 2, 2)
+
+product_sales.plot(kind='bar')
+
+plt.title("Top Products by Sales")
+plt.xlabel("Product")
+plt.ylabel("Total Sales")
+
+plt.tight_layout()
+
+# Show charts
+plt.show()
+
+# ---------------- OUTPUT INSIGHTS ---------------- #
+
+print("\n------ INSIGHTS ------")
+
+print("\n1. Total Sales Per Product:")
+print(product_sales)
+
+print("\n2. Region-wise Sales:")
+print(region_sales)
+
+print("\n3. Best Performing Region:")
+print(best_region)
+
+print("\n4. Average Sales:")
+print(round(df["SALES"].mean(), 2))
+
+print("\n5. Highest Sales Value:")
+print(df["SALES"].max())
