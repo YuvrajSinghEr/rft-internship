@@ -1,0 +1,102 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# ---------------- DATASET ---------------- #
+
+data = {
+    "CUSTOMER_ID": [101, 102, 103, 104, 105],
+    
+    "AGE": [22, 35, 28, 45, 30],
+    
+    "SPENDING": [5000, 15000, 7000, 20000, 3000],
+    
+    "VISITS": [5, 15, 7, 20, 2]
+}
+
+# Create DataFrame
+df = pd.DataFrame(data)
+
+print("Customer Dataset:\n")
+print(df)
+
+# ---------------- CUSTOMER SEGMENTATION ---------------- #
+
+# Function to categorize customers
+def segment_customer(spending):
+
+    if spending >= 15000:
+        return "HIGH"
+
+    elif spending >= 7000:
+        return "MEDIUM"
+
+    else:
+        return "LOW"
+
+# Create new column
+df["SEGMENT"] = df["SPENDING"].apply(
+    segment_customer
+)
+
+# ---------------- IDENTIFY CUSTOMERS ---------------- #
+
+# High-value customers
+high_value = df[
+    df["SEGMENT"] == "HIGH"
+]
+
+# Low-engagement customers
+low_engagement = df[
+    df["VISITS"] < 5
+]
+
+# ---------------- VISUALIZATION ---------------- #
+
+plt.figure(figsize=(12, 5))
+
+# ----- SPENDING DISTRIBUTION ----- #
+
+plt.subplot(1, 2, 1)
+
+sns.histplot(
+    df["SPENDING"],
+    bins=5,
+    kde=True
+)
+
+plt.title("Customer Spending Distribution")
+
+# ----- CUSTOMER SEGMENTS ----- #
+
+plt.subplot(1, 2, 2)
+
+segment_counts = df["SEGMENT"].value_counts()
+
+plt.pie(
+    segment_counts,
+    labels=segment_counts.index,
+    autopct='%1.1f%%'
+)
+
+plt.title("Customer Segments")
+
+plt.tight_layout()
+
+# Show plots
+plt.show()
+
+# ---------------- OUTPUT ---------------- #
+
+print("\n------ CUSTOMER SEGMENTS ------\n")
+print(df[[
+    "CUSTOMER_ID",
+    "SPENDING",
+    "SEGMENT"
+]])
+
+print("\nHigh Value Customers:\n")
+print(high_value)
+
+print("\nLow Engagement Customers:\n")
+print(low_engagement)
