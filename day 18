@@ -1,0 +1,121 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# ---------------- DATASET ---------------- #
+
+data = {
+    "MOVIE": [
+        "Movie A",
+        "Movie B",
+        "Movie C",
+        "Movie D",
+        "Movie E"
+    ],
+
+    "RATING": [
+        8.5,
+        7.2,
+        9.0,
+        6.8,
+        8.0
+    ],
+
+    "GENRE": [
+        "Action",
+        "Comedy",
+        "Action",
+        "Drama",
+        "Comedy"
+    ],
+
+    "REVENUE": [
+        500,
+        300,
+        800,
+        200,
+        450
+    ]
+}
+
+# Create DataFrame
+df = pd.DataFrame(data)
+
+print("Movie Dataset:\n")
+print(df)
+
+# ---------------- ANALYSIS ---------------- #
+
+# Highest rated movie
+highest_rated = df.loc[
+    df["RATING"].idxmax()
+]
+
+# Most profitable genre
+genre_revenue = df.groupby(
+    "GENRE"
+)["REVENUE"].sum()
+
+most_profitable_genre = genre_revenue.idxmax()
+
+# Top 5 movies by revenue
+top_movies = df.sort_values(
+    by="REVENUE",
+    ascending=False
+)
+
+# Correlation between rating and revenue
+correlation = df["RATING"].corr(
+    df["REVENUE"]
+)
+
+# ---------------- VISUALIZATION ---------------- #
+
+plt.figure(figsize=(12, 5))
+
+# ----- GENRE VS REVENUE ----- #
+
+plt.subplot(1, 2, 1)
+
+genre_revenue.plot(kind='bar')
+
+plt.title("Genre vs Revenue")
+plt.xlabel("Genre")
+plt.ylabel("Revenue")
+
+# ----- RATING DISTRIBUTION ----- #
+
+plt.subplot(1, 2, 2)
+
+sns.histplot(
+    df["RATING"],
+    bins=5,
+    kde=True
+)
+
+plt.title("Rating Distribution")
+plt.xlabel("Ratings")
+
+plt.tight_layout()
+
+# Show plots
+plt.show()
+
+# ---------------- OUTPUT ---------------- #
+
+print("\n------ INSIGHTS ------")
+
+print("\nHighest Rated Movie:")
+print(highest_rated)
+
+print("\nMost Profitable Genre:")
+print(most_profitable_genre)
+
+print("\nTop Movies By Revenue:")
+print(top_movies[[
+    "MOVIE",
+    "REVENUE"
+]])
+
+print("\nCorrelation Between Rating & Revenue:")
+print(round(correlation, 2))
