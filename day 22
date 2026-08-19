@@ -1,0 +1,68 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+df = pd.read_csv("sales_data.csv")
+
+# Cleaning
+df = df.drop_duplicates()
+df = df.dropna()
+df["DATE"] = pd.to_datetime(df["DATE"])
+
+
+# Calculations
+daily_sales = df.groupby("DATE")["REVENUE"].sum()
+
+product_sales = (
+    df.groupby("PRODUCT")["REVENUE"]
+    .sum()
+    .sort_values(ascending=False)
+)
+
+category_sales = df.groupby("CATEGORY")["REVENUE"].sum()
+
+
+# Dashboard
+fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+
+
+# Line chart
+axes[0].plot(
+    daily_sales.index,
+    daily_sales.values,
+    marker="o"
+)
+
+axes[0].set_title("Sales Trend")
+axes[0].set_xlabel("Date")
+axes[0].set_ylabel("Revenue")
+axes[0].tick_params(axis="x", rotation=45)
+
+
+# Bar chart
+axes[1].bar(
+    product_sales.index,
+    product_sales.values
+)
+
+axes[1].set_title("Product Revenue")
+axes[1].set_xlabel("Product")
+axes[1].set_ylabel("Revenue")
+
+
+# Pie chart
+axes[2].pie(
+    category_sales,
+    labels=category_sales.index,
+    autopct="%1.1f%%"
+)
+
+axes[2].set_title("Category Distribution")
+
+
+plt.suptitle(
+    "Sales & Customer Insights Dashboard",
+    fontsize=16
+)
+
+plt.tight_layout()
+plt.show()
