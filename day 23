@@ -1,0 +1,167 @@
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+# ==========================================
+# PAGE CONFIGURATION
+# ==========================================
+
+st.set_page_config(
+    page_title="Employee Performance Dashboard",
+    page_icon="📊",
+    layout="wide"
+)
+
+
+# ==========================================
+# TITLE
+# ==========================================
+
+st.title("📊 Employee Performance Analytics Dashboard")
+
+st.write(
+    "Analyze employee performance, attendance, "
+    "and department statistics."
+)
+
+
+# ==========================================
+# LOAD DATA
+# ==========================================
+
+df = pd.read_csv("employee_performance.csv")
+
+df = df.drop_duplicates()
+df = df.dropna()
+
+
+# ==========================================
+# SIDEBAR FILTER
+# ==========================================
+
+st.sidebar.header("Filters")
+
+departments = ["All"] + sorted(
+    df["DEPARTMENT"].unique().tolist()
+)
+
+selected_department = st.sidebar.selectbox(
+    "Select Department",
+    departments
+)
+
+
+# ==========================================
+# APPLY FILTER
+# ==========================================
+
+if selected_department == "All":
+
+    filtered_df = df
+
+else:
+
+    filtered_df = df[
+        df["DEPARTMENT"] == selected_department
+    ]
+
+
+# ==========================================
+# KPI SECTION
+# ==========================================
+
+col1, col2, col3, col4 = st.columns(4)
+
+col1.metric(
+    "Total Employees",
+    len(filtered_df)
+)
+
+col2.metric(
+    "Average Performance",
+    round(
+        filtered_df["PERFORMANCE"].mean(),
+        2
+    )
+)
+
+col3.metric(
+    "Average Attendance",
+    round(
+        filtered_df["ATTENDANCE"].mean(),
+        2
+    )
+)
+
+col4.metric(
+    "Top Performance",
+    filtered_df["PERFORMANCE"].max()
+)
+
+
+# ==========================================
+# EMPLOYEE DATA
+# ==========================================
+
+st.subheader("Employee Data")
+
+st.dataframe(filtered_df)
+
+
+# ==========================================
+# DEPARTMENT PERFORMANCE
+# ==========================================
+
+st.subheader("Department Performance")
+
+department_average = (
+    filtered_df
+    .groupby("DEPARTMENT")["PERFORMANCE"]
+    .mean()
+)
+
+fig, ax = plt.subplots()
+
+ax.bar(
+    department_average.index,
+    department_average.values
+)
+
+ax.set_xlabel("Department")
+ax.set_ylabel("Average Performance")
+
+plt.xticks(rotation=30)
+
+st.pyplot(fig)
+
+
+# ==========================================
+# LOW ATTENDANCE
+# ==========================================
+
+st.subheader("⚠️ Employees Below 75% Attendance")
+
+low_attendance = filtered_df[
+    filtered_df["ATTENDANCE"] < 75
+]
+
+st.dataframe(low_attendance)
+
+
+# ==========================================
+# TOP 10
+# ==========================================
+
+st.subheader("🏆 Top 10 Performers")
+
+top_10 = (
+    filtered_df
+    .sort_values(
+        "PERFORMANCE",
+        ascending=False
+    )
+    .head(10)
+)
+
+st.dataframe(top_10)
