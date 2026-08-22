@@ -1,0 +1,245 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+# ==========================================
+# DAY 24 - WEATHER DATA ANALYTICS
+# ==========================================
+
+# 1. READ CSV
+df = pd.read_csv("weather_data.csv")
+
+print("========== WEATHER DATA ==========")
+print(df)
+
+
+# ==========================================
+# 2. DATA CLEANING
+# ==========================================
+
+print("\n========== DATA CHECK ==========")
+
+print("\nMissing Values:")
+print(df.isnull().sum())
+
+print("\nDuplicate Rows:")
+print(df.duplicated().sum())
+
+
+# Remove duplicate rows
+df = df.drop_duplicates()
+
+# Remove rows containing missing values
+df = df.dropna()
+
+# Convert DATE into datetime
+df["DATE"] = pd.to_datetime(df["DATE"])
+
+
+print("\n========== CLEANED DATA ==========")
+print(df)
+
+
+# ==========================================
+# 3. AVERAGE TEMPERATURE PER CITY
+# ==========================================
+
+average_temperature = (
+    df.groupby("CITY")["TEMPERATURE"]
+    .mean()
+    .sort_values(ascending=False)
+)
+
+print("\n========== AVERAGE TEMPERATURE ==========")
+print(average_temperature)
+
+
+# ==========================================
+# 4. HOTTEST CITY
+# ==========================================
+
+hottest_city = average_temperature.idxmax()
+hottest_temperature = average_temperature.max()
+
+print("\nHottest City:", hottest_city)
+print("Average Temperature:", round(hottest_temperature, 2))
+
+
+# ==========================================
+# 5. COLDEST CITY
+# ==========================================
+
+coldest_city = average_temperature.idxmin()
+coldest_temperature = average_temperature.min()
+
+print("\nColdest City:", coldest_city)
+print("Average Temperature:", round(coldest_temperature, 2))
+
+
+# ==========================================
+# 6. RAINY DAYS
+# ==========================================
+
+rainy_days = df[
+    df["WEATHER"].str.lower() == "rainy"
+]
+
+print("\n========== RAINY DAYS ==========")
+print(rainy_days)
+
+print("\nTotal Rainy Days:", len(rainy_days))
+
+
+# ==========================================
+# 7. SUNNY DAYS
+# ==========================================
+
+sunny_days = df[
+    df["WEATHER"].str.lower() == "sunny"
+]
+
+print("\n========== SUNNY DAYS ==========")
+print(sunny_days)
+
+print("\nTotal Sunny Days:", len(sunny_days))
+
+
+# ==========================================
+# 8. WEATHER DISTRIBUTION
+# ==========================================
+
+weather_count = df["WEATHER"].value_counts()
+
+print("\n========== WEATHER DISTRIBUTION ==========")
+print(weather_count)
+
+
+# ==========================================
+# 9. TEMPERATURE TREND
+# ==========================================
+
+# Average temperature for each date
+daily_temperature = (
+    df.groupby("DATE")["TEMPERATURE"]
+    .mean()
+)
+
+plt.figure(figsize=(10, 5))
+
+plt.plot(
+    daily_temperature.index,
+    daily_temperature.values,
+    marker="o"
+)
+
+plt.title("Temperature Trend")
+plt.xlabel("Date")
+plt.ylabel("Temperature (°C)")
+
+plt.xticks(rotation=45)
+plt.grid(True)
+
+plt.tight_layout()
+plt.show()
+
+
+# ==========================================
+# 10. WEATHER DISTRIBUTION CHART
+# ==========================================
+
+plt.figure(figsize=(7, 7))
+
+plt.pie(
+    weather_count,
+    labels=weather_count.index,
+    autopct="%1.1f%%",
+    startangle=90
+)
+
+plt.title("Weather Distribution")
+
+plt.show()
+
+
+# ==========================================
+# 11. AVERAGE TEMPERATURE PER CITY
+# ==========================================
+
+plt.figure(figsize=(8, 5))
+
+plt.bar(
+    average_temperature.index,
+    average_temperature.values
+)
+
+plt.title("Average Temperature per City")
+plt.xlabel("City")
+plt.ylabel("Average Temperature (°C)")
+
+plt.tight_layout()
+plt.show()
+
+
+# ==========================================
+# 12. MOVING AVERAGE
+# ==========================================
+
+daily_temperature = daily_temperature.sort_index()
+
+moving_average = daily_temperature.rolling(
+    window=3
+).mean()
+
+print("\n========== MOVING AVERAGE ==========")
+print(moving_average)
+
+
+# ==========================================
+# 13. PREDICT TOMORROW'S TEMPERATURE
+# ==========================================
+
+if len(daily_temperature) >= 3:
+
+    tomorrow_temperature = (
+        daily_temperature
+        .tail(3)
+        .mean()
+    )
+
+    print(
+        "\nPredicted Temperature for Tomorrow:",
+        round(tomorrow_temperature, 2),
+        "°C"
+    )
+
+else:
+
+    print(
+        "\nNot enough data to predict tomorrow's temperature."
+    )
+
+
+# ==========================================
+# 14. EXPORT FINAL REPORT
+# ==========================================
+
+report = df.copy()
+
+report["TEMPERATURE_STATUS"] = report[
+    "TEMPERATURE"
+].apply(
+    lambda x:
+    "Hot" if x >= 30
+    else "Moderate" if x >= 20
+    else "Cold"
+)
+
+report.to_csv(
+    "weather_analysis_report.csv",
+    index=False
+)
+
+print("\n======================================")
+print("Final report exported successfully!")
+print("File: weather_analysis_report.csv")
+print("======================================")
