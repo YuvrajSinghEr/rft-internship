@@ -1,0 +1,208 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+# ==========================================
+# DAY 25 - FRAUD DETECTION & TRANSACTION
+# ANALYSIS SYSTEM
+# ==========================================
+# ==========================================
+# 1. READ CSV
+# ==========================================
+df = pd.read_csv("transactions.csv")
+print("========== TRANSACTION DATA ==========")
+print(df)
+# ==========================================
+# 2. DATA CLEANING
+# ==========================================
+print("\n========== DATA CHECK ==========")
+print("\nMissing Values:")
+print(df.isnull().sum())
+print("\nDuplicate Rows:")
+print(df.duplicated().sum())
+# Remove rows with missing values
+df = df.dropna()
+# Convert DATE to datetime
+df["DATE"] = pd.to_datetime(df["DATE"])
+# ==========================================
+# 3. DETECT DUPLICATE TRANSACTIONS
+# ==========================================
+duplicates = df[
+    df.duplicated(
+        subset=["TRANSACTION_ID"],
+        keep=False
+    )
+]
+print("\n========== DUPLICATE TRANSACTIONS ==========")
+if len(duplicates) > 0:
+    print(duplicates)
+else:
+    print("No duplicate transactions found.")
+# Remove duplicate transaction IDs
+df = df.drop_duplicates(
+    subset=["TRANSACTION_ID"],
+    keep="first"
+)
+# ==========================================
+# 4. HIGH-VALUE TRANSACTIONS
+# ==========================================
+THRESHOLD = 10000
+high_value = df[
+    df["AMOUNT"] > THRESHOLD
+]
+print("\n========== HIGH-VALUE TRANSACTIONS ==========")
+print(high_value)
+print(
+    "\nNumber of high-value transactions:",
+    len(high_value)
+)
+# ==========================================
+# 5. FIND FREQUENT ACCOUNTS
+# ==========================================
+account_frequency = (
+    df["ACCOUNT"]
+    .value_counts()
+)
+print("\n========== ACCOUNT FREQUENCY ==========")
+print(account_frequency)
+# Define suspicious frequency
+FREQUENCY_THRESHOLD = 4
+suspicious_accounts = account_frequency[
+    account_frequency >= FREQUENCY_THRESHOLD
+]
+print("\n========== SUSPICIOUS ACCOUNTS ==========")
+if len(suspicious_accounts) > 0:
+    print(suspicious_accounts)
+else:
+    print("No suspicious accounts found.")
+# ==========================================
+# 6. FIND SUSPICIOUS TRANSACTIONS
+# ==========================================
+suspicious_transactions = df[
+    (df["AMOUNT"] > THRESHOLD) |
+    (df["ACCOUNT"].isin(suspicious_accounts.index))
+]
+print("\n========== SUSPICIOUS TRANSACTIONS ==========")
+print(suspicious_transactions)
+# ==========================================
+# 7. TRANSACTION CATEGORY CHART
+# ==========================================
+category_count = df["CATEGORY"].value_counts()
+plt.figure(figsize=(8, 5))
+plt.bar(
+    category_count.index,
+    category_count.values
+)
+plt.title("Transaction Category Distribution")
+plt.xlabel("Category")
+plt.ylabel("Number of Transactions")
+plt.xticks(rotation=30)
+plt.tight_layout()
+plt.show()
+# ==========================================
+# 8. DAILY TRANSACTION TREND
+# ==========================================
+daily_transactions = (
+    df.groupby("DATE")["AMOUNT"]
+    .sum()
+)
+plt.figure(figsize=(10, 5))
+plt.plot(
+    daily_transactions.index,
+    daily_transactions.values,
+    marker="o"
+)
+plt.title("Daily Transaction Trend")
+plt.xlabel("Date")
+plt.ylabel("Total Transaction Amount")
+plt.xticks(rotation=45)
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+# ==========================================
+# 9. TOP 10 HIGHEST TRANSACTIONS
+# ==========================================
+top_10 = (
+    df.sort_values(
+        by="AMOUNT",
+        ascending=False
+    )
+    .head(10)
+)
+print("\n========== TOP 10 HIGHEST TRANSACTIONS ==========")
+print(
+    top_10[
+        [
+            "TRANSACTION_ID",
+            "ACCOUNT",
+            "CATEGORY",
+            "AMOUNT"
+        ]
+    ]
+)
+plt.figure(figsize=(10, 5))
+plt.bar(
+    top_10["TRANSACTION_ID"],
+    top_10["AMOUNT"]
+)
+plt.title("Top 10 Highest Transactions")
+plt.xlabel("Transaction ID")
+plt.ylabel("Amount")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+# ==========================================
+# 10. BONUS - RISK SCORE
+# ==========================================
+def calculate_risk_score(row):
+    score = 0
+    # High transaction amount
+    if row["AMOUNT"] > 10000:
+        score += 40
+    # Very high transaction
+    if row["AMOUNT"] > 20000:
+        score += 20
+    # Frequent account
+    if row["ACCOUNT"] in suspicious_accounts.index:
+        score += 30
+    # Assign risk level
+    if score >= 70:
+        risk = "HIGH"
+    elif score >= 40:
+        risk = "MEDIUM"
+    else:
+        risk = "LOW"
+    return pd.Series([score, risk])
+df[
+    ["RISK_SCORE", "RISK_LEVEL"]
+] = df.apply(
+    calculate_risk_score,
+    axis=1
+)
+# ==========================================
+# 11. DISPLAY RISK ANALYSIS
+# ==========================================
+print("\n========== RISK ANALYSIS ==========")
+print(
+    df[
+        [
+            "TRANSACTION_ID",
+            "ACCOUNT",
+            "AMOUNT",
+            "RISK_SCORE",
+            "RISK_LEVEL"
+        ]
+    ]
+)
+# ==========================================
+# 12. EXPORT SUSPICIOUS TRANSACTIONS
+# ==========================================
+suspicious_report = df[
+    (df["RISK_SCORE"] >= 40)
+]
+suspicious_report.to_csv(
+    "suspicious_transactions.csv",
+    index=False
+)
+print("\n==========================================")
+print("Suspicious transaction report created!")
+print("File: suspicious_transactions.csv")
+print("==========================================")
