@@ -1,0 +1,232 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import re
+from collections import Counter
+
+# -----------------------------------
+# 1. READ CSV FILE
+# -----------------------------------
+
+df = pd.read_csv("social_media_posts.csv")
+
+print("Social Media Data:")
+print(df.head())
+
+# -----------------------------------
+# 2. DATA CLEANING
+# -----------------------------------
+
+print("\nMissing Values:")
+print(df.isnull().sum())
+
+df = df.drop_duplicates()
+
+df["DATE"] = pd.to_datetime(df["DATE"])
+
+# Make sure numeric columns are numeric
+numeric_columns = ["LIKES", "COMMENTS", "SHARES"]
+
+for column in numeric_columns:
+    df[column] = pd.to_numeric(df[column], errors="coerce")
+
+df = df.dropna(subset=numeric_columns)
+
+# -----------------------------------
+# 3. CALCULATE ENGAGEMENT
+# -----------------------------------
+
+df["ENGAGEMENT"] = (
+    df["LIKES"] +
+    df["COMMENTS"] +
+    df["SHARES"]
+)
+
+print("\nEngagement:")
+print(df[["POST_ID", "USER", "ENGAGEMENT"]])
+
+# -----------------------------------
+# 4. TOP TRENDING HASHTAGS
+# -----------------------------------
+
+hashtags = []
+
+for text in df["HASHTAGS"].dropna():
+    found_hashtags = re.findall(r"#\w+", text.lower())
+    hashtags.extend(found_hashtags)
+
+hashtag_counts = Counter(hashtags)
+
+top_hashtags = pd.DataFrame(
+    hashtag_counts.items(),
+    columns=["HASHTAG", "COUNT"]
+).sort_values(
+    by="COUNT",
+    ascending=False
+)
+
+print("\nTop Trending Hashtags:")
+print(top_hashtags.head(10))
+
+# -----------------------------------
+# 5. MOST ACTIVE USERS
+# -----------------------------------
+
+active_users = (
+    df.groupby("USER")
+    .agg(
+        POSTS=("POST_ID", "count"),
+        TOTAL_ENGAGEMENT=("ENGAGEMENT", "sum")
+    )
+    .sort_values(
+        by="POSTS",
+        ascending=False
+    )
+)
+
+print("\nMost Active Users:")
+print(active_users)
+
+# -----------------------------------
+# 6. DAILY ENGAGEMENT
+# -----------------------------------
+
+daily_engagement = (
+    df.groupby("DATE")["ENGAGEMENT"]
+    .sum()
+    .reset_index()
+)
+
+print("\nDaily Engagement:")
+print(daily_engagement)
+
+# -----------------------------------
+# 7. MOST POPULAR POSTING TIME
+# -----------------------------------
+
+df["HOUR"] = pd.to_datetime(
+    df["TIME"],
+    format="%H:%M"
+).dt.hour
+
+popular_time = (
+    df.groupby("HOUR")["ENGAGEMENT"]
+    .sum()
+    .sort_values(
+        ascending=False
+    )
+)
+
+print("\nMost Popular Posting Hour:")
+print(popular_time.head(1))
+
+# -----------------------------------
+# 8. CONTENT CATEGORY DISTRIBUTION
+# -----------------------------------
+
+category_distribution = (
+    df["CATEGORY"]
+    .value_counts()
+)
+
+print("\nContent Category Distribution:")
+print(category_distribution)
+
+# -----------------------------------
+# 9. CHART 1 - TOP HASHTAGS
+# -----------------------------------
+
+top_10_hashtags = top_hashtags.head(10)
+
+plt.figure(figsize=(10, 5))
+
+plt.bar(
+    top_10_hashtags["HASHTAG"],
+    top_10_hashtags["COUNT"]
+)
+
+plt.title("Top Trending Hashtags")
+plt.xlabel("Hashtag")
+plt.ylabel("Number of Posts")
+plt.xticks(rotation=45)
+
+plt.tight_layout()
+plt.show()
+
+# -----------------------------------
+# 10. CHART 2 - DAILY ENGAGEMENT
+# -----------------------------------
+
+plt.figure(figsize=(10, 5))
+
+plt.plot(
+    daily_engagement["DATE"],
+    daily_engagement["ENGAGEMENT"],
+    marker="o"
+)
+
+plt.title("Daily Engagement Trend")
+plt.xlabel("Date")
+plt.ylabel("Total Engagement")
+
+plt.xticks(rotation=45)
+
+plt.tight_layout()
+plt.show()
+
+# -----------------------------------
+# 11. CHART 3 - CATEGORY DISTRIBUTION
+# -----------------------------------
+
+plt.figure(figsize=(7, 7))
+
+plt.pie(
+    category_distribution.values,
+    labels=category_distribution.index,
+    autopct="%1.1f%%"
+)
+
+plt.title("Content Category Distribution")
+
+plt.show()
+
+# -----------------------------------
+# 12. CREATE ANALYTICS REPORT
+# -----------------------------------
+
+report = df[
+    [
+        "POST_ID",
+        "DATE",
+        "TIME",
+        "USER",
+        "CATEGORY",
+        "LIKES",
+        "COMMENTS",
+        "SHARES",
+        "ENGAGEMENT"
+    ]
+].copy()
+
+# Add active-user information
+user_post_counts = df["USER"].value_counts()
+
+report["USER_POST_COUNT"] = (
+    report["USER"].map(user_post_counts)
+)
+
+# -----------------------------------
+# 13. EXPORT REPORT
+# -----------------------------------
+
+report.to_csv(
+    "social_media_analytics_report.csv",
+    index=False
+)
+
+print(
+    "\nAnalytics report exported successfully!"
+)
+
+print(
+    "File: social_media_analytics_report.csv"
+)
