@@ -1,0 +1,212 @@
+import os
+import re
+import pandas as pd
+# DAY 26 - AI RESUME SCREENING TOOL
+RESUME_FOLDER = "resumes"
+JOB_DESCRIPTION_FILE = "job_description.txt"
+OUTPUT_FILE = "shortlisted_candidates.csv"
+SHORTLIST_SCORE = 50
+# REQUIRED SKILLS
+REQUIRED_SKILLS = [
+    "python",
+    "pandas",
+    "numpy",
+    "sql",
+    "git",
+    "machine learning",
+    "data analysis"
+]
+# READ JOB DESCRIPTION
+with open(
+    JOB_DESCRIPTION_FILE,
+    "r",
+    encoding="utf-8"
+) as file:
+    job_description = file.read()
+print("========== JOB DESCRIPTION ==========")
+print(job_description)
+# EXTRACT NAME
+def extract_name(text):
+    match = re.search(
+        r"name\s*:\s*(.+)",
+        text,
+        re.IGNORECASE
+    )
+    if match:
+        return match.group(1).strip()
+    return "Unknown"
+# EXTRACT EXPERIENCE
+def extract_experience(text):
+    match = re.search(
+        r"experience\s*:\s*(\d+(?:\.\d+)?)\s*years?",
+        text,
+        re.IGNORECASE
+    )
+    if match:
+        return float(match.group(1))
+    return 0
+# EXTRACT EDUCATION
+def extract_education(text):
+    match = re.search(
+        r"education\s*:\s*(.+)",
+        text,
+        re.IGNORECASE
+    )
+    if match:
+        return match.group(1).strip()
+    return "Not specified"
+# EXTRACT SKILLS
+def extract_skills(text):
+    text_lower = text.lower()
+    found_skills = []
+    for skill in REQUIRED_SKILLS:
+        if skill in text_lower:
+            found_skills.append(skill)
+    return found_skills
+# FIND MISSING SKILLS
+def find_missing_skills(candidate_skills):
+    missing = []
+    for skill in REQUIRED_SKILLS:
+        if skill not in candidate_skills:
+            missing.append(skill)
+    return missing
+# SKILL SCORE
+def calculate_skill_score(candidate_skills):
+    if len(REQUIRED_SKILLS) == 0:
+        return 0
+    score = (
+        len(candidate_skills)
+        / len(REQUIRED_SKILLS)
+    ) * 60
+    return round(score, 2)
+# EXPERIENCE SCORE
+def calculate_experience_score(experience):
+    if 0 <= experience <= 2:
+        return 20
+    elif experience > 2:
+        return 15
+    return 0
+# EDUCATION SCORE
+def calculate_education_score(education):
+    accepted_degrees = [
+        "b.tech",
+        "b.e",
+        "b.sc",
+        "mca"
+    ]
+    education_lower = education.lower()
+    for degree in accepted_degrees:
+        if degree in education_lower:
+            return 20
+    return 0
+# READ RESUMES
+candidates = []
+for filename in os.listdir(RESUME_FOLDER):
+    if not filename.lower().endswith(".txt"):
+        continue
+    filepath = os.path.join(
+        RESUME_FOLDER,
+        filename
+    )
+    with open(
+        filepath,
+        "r",
+        encoding="utf-8"
+    ) as file:
+        resume_text = file.read()
+    # Extract details
+    name = extract_name(resume_text)
+    experience = extract_experience(
+        resume_text
+    )
+    education = extract_education(
+        resume_text
+    )
+    candidate_skills = extract_skills(
+        resume_text
+    )
+    # Missing skills
+    missing_skills = find_missing_skills(
+        candidate_skills
+    )
+    # Scores
+    skill_score = calculate_skill_score(
+        candidate_skills
+    )
+    experience_score = calculate_experience_score(
+        experience
+    )
+    education_score = calculate_education_score(
+        education
+    )
+    total_score = (
+        skill_score
+        + experience_score
+        + education_score
+    )
+    # Store candidate
+    candidates.append({
+        "NAME": name,
+        "FILE": filename,
+        "SKILLS": ", ".join(
+            candidate_skills
+        ),
+        "MISSING_SKILLS": ", ".join(
+            missing_skills
+        ),
+        "EXPERIENCE": experience,
+        "EDUCATION": education,
+        "SKILL_SCORE": skill_score,
+        "EXPERIENCE_SCORE":
+            experience_score,
+        "EDUCATION_SCORE":
+            education_score,
+        "MATCH_SCORE":
+            round(total_score, 2)
+    })
+# CREATE DATAFRAME
+results = pd.DataFrame(candidates)
+# RANK CANDIDATES
+results = results.sort_values(
+    by="MATCH_SCORE",
+    ascending=False
+).reset_index(drop=True)
+results["RANK"] = (
+    results.index + 1
+)
+# SHORTLIST STATUS
+results["STATUS"] = results[
+    "MATCH_SCORE"
+].apply(
+    lambda score:
+    "Shortlisted for Review"
+    if score >= SHORTLIST_SCORE
+    else "Not Shortlisted"
+)
+# DISPLAY RESULTS
+print("\n==========================================")
+print("         RESUME SCREENING RESULTS")
+print("==========================================")
+print(
+    results[
+        [
+            "RANK",
+            "NAME",
+            "MATCH_SCORE",
+            "MISSING_SKILLS",
+            "STATUS"
+        ]
+    ].to_string(index=False)
+)
+# EXPORT SHORTLISTED CANDIDATES
+shortlisted = results[
+    results["MATCH_SCORE"] >= SHORTLIST_SCORE
+]
+shortlisted.to_csv(
+    OUTPUT_FILE,
+    index=False
+)
+print("\n==========================================")
+print("Shortlisted report created successfully!")
+print("File:", OUTPUT_FILE)
+print("==========================================")
