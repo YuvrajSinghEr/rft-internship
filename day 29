@@ -1,0 +1,353 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+# ==========================================
+# 1. READ DATA
+# ==========================================
+
+df = pd.read_csv("expenses.csv")
+budget = pd.read_csv("budget.csv")
+
+print("Expense Data:")
+print(df.head())
+
+
+# ==========================================
+# 2. DATA CLEANING
+# ==========================================
+
+df["DATE"] = pd.to_datetime(df["DATE"])
+
+df["AMOUNT"] = pd.to_numeric(
+    df["AMOUNT"],
+    errors="coerce"
+)
+
+df = df.dropna(
+    subset=["DATE", "AMOUNT"]
+)
+
+df = df.drop_duplicates()
+
+
+# ==========================================
+# 3. AUTOMATIC CATEGORIZATION
+# ==========================================
+
+def categorize_expense(description):
+
+    description = str(description).lower()
+
+    if any(word in description for word in [
+        "grocery",
+        "restaurant",
+        "food"
+    ]):
+        return "Food"
+
+    elif any(word in description for word in [
+        "uber",
+        "petrol",
+        "transport",
+        "bus",
+        "taxi"
+    ]):
+        return "Transport"
+
+    elif any(word in description for word in [
+        "electricity",
+        "water",
+        "gas",
+        "bill",
+        "recharge"
+    ]):
+        return "Utilities"
+
+    elif any(word in description for word in [
+        "netflix",
+        "movie",
+        "entertainment"
+    ]):
+        return "Entertainment"
+
+    elif any(word in description for word in [
+        "amazon",
+        "shopping",
+        "clothes"
+    ]):
+        return "Shopping"
+
+    elif any(word in description for word in [
+        "medicine",
+        "hospital",
+        "doctor"
+    ]):
+        return "Healthcare"
+
+    else:
+        return "Other"
+
+
+df["CATEGORY"] = df["DESCRIPTION"].apply(
+    categorize_expense
+)
+
+
+# ==========================================
+# 4. IDENTIFY INCOME
+# ==========================================
+
+income = df[
+    df["DESCRIPTION"]
+    .str.lower()
+    .str.contains("salary")
+]
+
+expenses = df[
+    ~df["DESCRIPTION"]
+    .str.lower()
+    .str.contains("salary")
+].copy()
+
+
+# ==========================================
+# 5. CREATE MONTH COLUMN
+# ==========================================
+
+expenses["MONTH"] = (
+    expenses["DATE"]
+    .dt.to_period("M")
+    .astype(str)
+)
+
+income["MONTH"] = (
+    income["DATE"]
+    .dt.to_period("M")
+    .astype(str)
+)
+
+
+# ==========================================
+# 6. MONTHLY INCOME
+# ==========================================
+
+monthly_income = (
+    income
+    .groupby("MONTH")["AMOUNT"]
+    .sum()
+)
+
+print("\nMonthly Income:")
+print(monthly_income)
+
+
+# ==========================================
+# 7. MONTHLY EXPENSE
+# ==========================================
+
+monthly_expense = (
+    expenses
+    .groupby("MONTH")["AMOUNT"]
+    .sum()
+)
+
+print("\nMonthly Expense:")
+print(monthly_expense)
+
+
+# ==========================================
+# 8. MONTHLY SAVINGS
+# ==========================================
+
+monthly_summary = pd.DataFrame({
+    "INCOME": monthly_income,
+    "EXPENSE": monthly_expense
+}).fillna(0)
+
+monthly_summary["SAVINGS"] = (
+    monthly_summary["INCOME"] -
+    monthly_summary["EXPENSE"]
+)
+
+monthly_summary["SAVINGS_PERCENT"] = (
+    monthly_summary["SAVINGS"] /
+    monthly_summary["INCOME"]
+) * 100
+
+
+print("\nMonthly Budget Summary:")
+print(monthly_summary)
+
+
+# ==========================================
+# 9. CATEGORY-WISE EXPENSE
+# ==========================================
+
+category_expense = (
+    expenses
+    .groupby("CATEGORY")["AMOUNT"]
+    .sum()
+    .sort_values(
+        ascending=False
+    )
+)
+
+print("\nCategory-wise Expense:")
+print(category_expense)
+
+
+# ==========================================
+# 10. BUDGET ANALYSIS
+# ==========================================
+
+budget_analysis = budget.copy()
+
+budget_analysis["ACTUAL_SPENDING"] = (
+    budget_analysis["CATEGORY"]
+    .map(category_expense)
+    .fillna(0)
+)
+
+budget_analysis["REMAINING_BUDGET"] = (
+    budget_analysis["MONTHLY_BUDGET"] -
+    budget_analysis["ACTUAL_SPENDING"]
+)
+
+budget_analysis["STATUS"] = (
+    budget_analysis["REMAINING_BUDGET"]
+    .apply(
+        lambda x:
+        "Within Budget"
+        if x >= 0
+        else "Over Budget"
+    )
+)
+
+print("\nBudget Analysis:")
+print(budget_analysis)
+
+
+# ==========================================
+# 11. MONTHLY SPENDING TREND
+# ==========================================
+
+plt.figure(figsize=(10, 5))
+
+plt.plot(
+    monthly_summary.index,
+    monthly_summary["EXPENSE"],
+    marker="o"
+)
+
+plt.title("Monthly Spending Trend")
+plt.xlabel("Month")
+plt.ylabel("Expense (₹)")
+
+plt.tight_layout()
+plt.show()
+
+
+# ==========================================
+# 12. CATEGORY SPENDING CHART
+# ==========================================
+
+plt.figure(figsize=(9, 5))
+
+plt.bar(
+    category_expense.index,
+    category_expense.values
+)
+
+plt.title("Category-wise Spending")
+plt.xlabel("Category")
+plt.ylabel("Amount (₹)")
+
+plt.xticks(rotation=30)
+
+plt.tight_layout()
+plt.show()
+
+
+# ==========================================
+# 13. SAVINGS CHART
+# ==========================================
+
+plt.figure(figsize=(9, 5))
+
+plt.plot(
+    monthly_summary.index,
+    monthly_summary["SAVINGS"],
+    marker="o"
+)
+
+plt.title("Monthly Savings")
+plt.xlabel("Month")
+plt.ylabel("Savings (₹)")
+
+plt.tight_layout()
+plt.show()
+
+
+# ==========================================
+# 14. EXPENSE PREDICTION
+# ==========================================
+
+if len(monthly_expense) >= 3:
+
+    predicted_expense = (
+        monthly_expense
+        .tail(3)
+        .mean()
+    )
+
+    print(
+        "\nPredicted Next Month Expense:"
+    )
+
+    print(
+        f"₹{predicted_expense:,.2f}"
+    )
+
+else:
+
+    predicted_expense = (
+        monthly_expense.mean()
+    )
+
+    print(
+        "\nPredicted Expense:"
+    )
+
+    print(
+        f"₹{predicted_expense:,.2f}"
+    )
+
+
+# ==========================================
+# 15. CREATE FINAL REPORT
+# ==========================================
+
+report = monthly_summary.reset_index()
+
+report["PREDICTED_NEXT_MONTH_EXPENSE"] = (
+    predicted_expense
+)
+
+
+# ==========================================
+# 16. EXPORT REPORT
+# ==========================================
+
+report.to_csv(
+    "expense_report.csv",
+    index=False
+)
+
+print(
+    "\nFinal report exported successfully!"
+)
+
+print(
+    "File: expense_report.csv"
+)
