@@ -1,0 +1,212 @@
+import pandas as pd
+import os
+import re
+from datetime import datetime
+
+# ---------------------------------------
+# 1. READ INVOICE CSV
+# ---------------------------------------
+
+file_path = "invoices.csv"
+
+df = pd.read_csv(file_path)
+
+print("\n========== ORIGINAL INVOICE DATA ==========")
+print(df)
+
+
+# ---------------------------------------
+# 2. CLEAN DATA
+# ---------------------------------------
+
+df["INVOICE_DATE"] = pd.to_datetime(
+    df["INVOICE_DATE"],
+    errors="coerce"
+)
+
+df["DUE_DATE"] = pd.to_datetime(
+    df["DUE_DATE"],
+    errors="coerce"
+)
+
+df["QUANTITY"] = pd.to_numeric(
+    df["QUANTITY"],
+    errors="coerce"
+)
+
+df["PRICE"] = pd.to_numeric(
+    df["PRICE"],
+    errors="coerce"
+)
+
+df = df.dropna()
+
+df = df.drop_duplicates(
+    subset=["INVOICE_NUMBER"]
+)
+
+
+# ---------------------------------------
+# 3. CALCULATE ITEM TOTAL
+# ---------------------------------------
+
+df["ITEM_TOTAL"] = df["QUANTITY"] * df["PRICE"]
+
+print("\n========== ITEM TOTAL ==========")
+print(
+    df[
+        [
+            "INVOICE_NUMBER",
+            "ITEM",
+            "QUANTITY",
+            "PRICE",
+            "ITEM_TOTAL"
+        ]
+    ]
+)
+
+
+# ---------------------------------------
+# 4. CALCULATE TOTAL AMOUNT PER INVOICE
+# ---------------------------------------
+
+invoice_totals = (
+    df.groupby(
+        [
+            "INVOICE_NUMBER",
+            "CUSTOMER_NAME",
+            "CUSTOMER_EMAIL",
+            "INVOICE_DATE",
+            "DUE_DATE"
+        ]
+    )["ITEM_TOTAL"]
+    .sum()
+    .reset_index()
+)
+
+invoice_totals.rename(
+    columns={
+        "ITEM_TOTAL": "TOTAL_AMOUNT"
+    },
+    inplace=True
+)
+
+
+# ---------------------------------------
+# 5. IDENTIFY OVERDUE INVOICES
+# ---------------------------------------
+
+today = pd.Timestamp.today().normalize()
+
+invoice_totals["STATUS"] = invoice_totals[
+    "DUE_DATE"
+].apply(
+    lambda x: "OVERDUE"
+    if x < today
+    else "PENDING"
+)
+
+
+# ---------------------------------------
+# 6. SORT BY TOTAL AMOUNT
+# ---------------------------------------
+
+invoice_totals = invoice_totals.sort_values(
+    by="TOTAL_AMOUNT",
+    ascending=False
+)
+
+
+# ---------------------------------------
+# 7. DISPLAY FINAL REPORT
+# ---------------------------------------
+
+print("\n========== CONSOLIDATED INVOICE REPORT ==========")
+
+print(invoice_totals)
+
+
+# ---------------------------------------
+# 8. OVERDUE INVOICES
+# ---------------------------------------
+
+overdue = invoice_totals[
+    invoice_totals["STATUS"] == "OVERDUE"
+]
+
+print("\n========== OVERDUE INVOICES ==========")
+
+if len(overdue) > 0:
+    print(overdue)
+else:
+    print("No overdue invoices found.")
+
+
+# ---------------------------------------
+# 9. SUMMARY CALCULATIONS
+# ---------------------------------------
+
+total_invoices = len(invoice_totals)
+
+total_revenue = invoice_totals[
+    "TOTAL_AMOUNT"
+].sum()
+
+overdue_count = len(overdue)
+
+pending_count = len(
+    invoice_totals[
+        invoice_totals["STATUS"] == "PENDING"
+    ]
+)
+
+average_invoice = (
+    invoice_totals["TOTAL_AMOUNT"].mean()
+)
+
+
+# ---------------------------------------
+# 10. EXPORT CSV REPORT
+# ---------------------------------------
+
+output_file = "invoice_report.csv"
+
+invoice_totals.to_csv(
+    output_file,
+    index=False
+)
+
+print(
+    f"\nReport exported successfully: {output_file}"
+)
+
+
+# ---------------------------------------
+# 11. GENERATE SUMMARY REPORT
+# ---------------------------------------
+
+summary = f"""
+AUTOMATED INVOICE SUMMARY
+=========================
+
+Total Invoices       : {total_invoices}
+Total Invoice Value  : ₹{total_revenue:,.2f}
+Average Invoice      : ₹{average_invoice:,.2f}
+Overdue Invoices     : {overdue_count}
+Pending Invoices     : {pending_count}
+Report Generated     : {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+"""
+
+print(summary)
+
+
+with open(
+    "summary_report.txt",
+    "w",
+    encoding="utf-8"
+) as file:
+
+    file.write(summary)
+
+
+print("Summary report generated successfully.")
