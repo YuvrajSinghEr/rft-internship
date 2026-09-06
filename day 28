@@ -1,0 +1,216 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+# 1. READ CSV
+df = pd.read_csv("stock_data.csv")
+print("Stock Market Data:")
+print(df.head())
+# 2. DATA CLEANING
+print("\nMissing Values:")
+print(df.isnull().sum())
+df = df.drop_duplicates()
+df["DATE"] = pd.to_datetime(df["DATE"])
+numeric_columns = [
+    "BUY_PRICE",
+    "CURRENT_PRICE",
+    "QUANTITY"
+]
+for column in numeric_columns:
+    df[column] = pd.to_numeric(
+        df[column],
+        errors="coerce"
+    )
+df = df.dropna(
+    subset=numeric_columns
+)
+# 3. INVESTMENT VALUE
+df["INVESTMENT"] = (
+    df["BUY_PRICE"] * df["QUANTITY"]
+)
+# 4. CURRENT VALUE
+df["CURRENT_VALUE"] = (
+    df["CURRENT_PRICE"] * df["QUANTITY"]
+)
+# 5. PROFIT / LOSS
+df["PROFIT_LOSS"] = (
+    df["CURRENT_VALUE"] -
+    df["INVESTMENT"]
+)
+# 6. RETURN %
+df["RETURN_PERCENT"] = (
+    df["PROFIT_LOSS"] /
+    df["INVESTMENT"]
+) * 100
+print("\nStock Profit/Loss:")
+print(
+    df[
+        [
+            "STOCK",
+            "INVESTMENT",
+            "CURRENT_VALUE",
+            "PROFIT_LOSS",
+            "RETURN_PERCENT"
+        ]
+    ]
+)
+# 7. STOCK-WISE SUMMARY
+stock_summary = (
+    df.groupby("STOCK")
+    .agg(
+        INVESTMENT=("INVESTMENT", "first"),
+        CURRENT_VALUE=("CURRENT_VALUE", "last")
+    )
+)
+stock_summary["PROFIT_LOSS"] = (
+    stock_summary["CURRENT_VALUE"] -
+    stock_summary["INVESTMENT"]
+)
+stock_summary["RETURN_PERCENT"] = (
+    stock_summary["PROFIT_LOSS"] /
+    stock_summary["INVESTMENT"]
+) * 100
+stock_summary = stock_summary.sort_values(
+    by="RETURN_PERCENT",
+    ascending=False
+)
+print("\nStock Performance:")
+print(stock_summary)
+# 8. BEST STOCK
+best_stock = stock_summary[
+    "RETURN_PERCENT"
+].idxmax()
+best_return = stock_summary.loc[
+    best_stock,
+    "RETURN_PERCENT"
+]
+print(
+    f"\nBest Performing Stock: "
+    f"{best_stock} ({best_return:.2f}%)"
+)
+# 9. WORST STOCK
+worst_stock = stock_summary[
+    "RETURN_PERCENT"
+].idxmin()
+worst_return = stock_summary.loc[
+    worst_stock,
+    "RETURN_PERCENT"
+]
+print(
+    f"Worst Performing Stock: "
+    f"{worst_stock} ({worst_return:.2f}%)"
+)
+# 10. OVERALL PORTFOLIO RETURN
+total_investment = (
+    stock_summary["INVESTMENT"].sum()
+)
+total_current_value = (
+    stock_summary["CURRENT_VALUE"].sum()
+)
+total_profit_loss = (
+    total_current_value -
+    total_investment
+)
+overall_return = (
+    total_profit_loss /
+    total_investment
+) * 100
+print("\nPortfolio Summary")
+print("-------------------------")
+print(f"Total Investment: ₹{total_investment:,.2f}")
+print(f"Current Value: ₹{total_current_value:,.2f}")
+print(f"Profit/Loss: ₹{total_profit_loss:,.2f}")
+print(f"Overall Return: {overall_return:.2f}%")
+# 11. PORTFOLIO GROWTH
+daily_portfolio = (
+    df.groupby("DATE")["CURRENT_VALUE"]
+    .sum()
+    .reset_index()
+)
+print("\nDaily Portfolio Value:")
+print(daily_portfolio)
+# 12. CHART - PORTFOLIO GROWTH
+plt.figure(figsize=(10, 5))
+plt.plot(
+    daily_portfolio["DATE"],
+    daily_portfolio["CURRENT_VALUE"],
+    marker="o"
+)
+plt.title("Portfolio Growth")
+plt.xlabel("Date")
+plt.ylabel("Portfolio Value (₹)")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+# 13. SECTOR-WISE INVESTMENT
+sector_investment = (
+    df.groupby("SECTOR")["INVESTMENT"]
+    .first()
+)
+print("\nSector-wise Investment:")
+print(sector_investment)
+plt.figure(figsize=(8, 5))
+plt.bar(
+    sector_investment.index,
+    sector_investment.values
+)
+plt.title("Sector-wise Investment")
+plt.xlabel("Sector")
+plt.ylabel("Investment (₹)")
+plt.tight_layout()
+plt.show()
+# 14. DAILY RETURN ANALYSIS
+daily_returns = daily_portfolio.copy()
+daily_returns["DAILY_RETURN"] = (
+    daily_returns["CURRENT_VALUE"]
+    .pct_change() * 100
+)
+print("\nDaily Return Analysis:")
+print(daily_returns)
+plt.figure(figsize=(10, 5))
+plt.plot(
+    daily_returns["DATE"],
+    daily_returns["DAILY_RETURN"],
+    marker="o"
+)
+plt.axhline(
+    0,
+    linestyle="--"
+)
+plt.title("Daily Portfolio Return")
+plt.xlabel("Date")
+plt.ylabel("Daily Return (%)")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+# 15. CREATE FINAL REPORT
+report = stock_summary.reset_index()
+report["PORTFOLIO_STATUS"] = report[
+    "PROFIT_LOSS"
+].apply(
+    lambda x: "Profit" if x > 0
+    else "Loss" if x < 0
+    else "No Change"
+)
+# Add ranking
+report["RANK"] = (
+    report["RETURN_PERCENT"]
+    .rank(
+        ascending=False,
+        method="min"
+    )
+    .astype(int)
+)
+report = report.sort_values(
+    by="RANK"
+)
+# 16. EXPORT CSV
+report.to_csv(
+    "portfolio_report.csv",
+    index=False
+)
+print(
+    "\nPortfolio report exported successfully!"
+)
+
+print(
+    "File: portfolio_report.csv"
+)
